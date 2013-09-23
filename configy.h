@@ -1,3 +1,6 @@
+#ifndef CONFIGY_INCLUDED_
+#define CONFIGY_INCLUDED_
+
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -13,6 +16,11 @@ namespace configy {
 	class Config {
 	public:
 		Config() {};
+		~Config() {
+			for (auto &t : this->cols) {
+				delete t.second;
+			}
+		}
 		void readFromFile(std::string file) {
 			std::ifstream in(file, std::ios::in | std::ios::binary);
 			if (in) {
@@ -54,20 +62,28 @@ namespace configy {
 			} else str->erase(str->begin(), str->end());
 		}
 
+		static void removeComments(std::string* str) {
+			int p;
+			while (std::string::npos != (p = str->find('#'))) {
+				int e;
+				if (std::string::npos == (e = str->find('\n', p))) {
+					e = str->length();
+				}
+				str->erase(p, e - p);
+			}
+		}
+
 		void read(std::string* data) {
 			std::istringstream s(*data);
 			std::string line;
 			std::string currentKey;
 			this->cols[""] = new Collection();
+			removeComments(data);
 
 			while (std::getline(s, line)) {
 				char c = line.at(0);
 				int l = line.length();
 				trim(&line);
-
-				if(c == '#') {
-					continue;
-				}
 
 				if (c == '[') {
 					int o = line.find_first_of(']');
@@ -99,3 +115,5 @@ namespace configy {
 		}
 	};
 }
+
+#endif
